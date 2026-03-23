@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://www.ehcache.org/v3">
+    
+    <!-- Cache directory for persistent storage -->
+    <persistence directory="cache/ehcache"/>
+    
+    <!-- Default cache template -->
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="minutes">30</ttl>
+        </expiry>
+        <heap unit="entries">1000</heap>
+    </cache-template>
+    
+    <!-- Invoice Header Cache -->
+    <cache alias="invoiceHeader">
+        <expiry>
+            <ttl unit="hours">2</ttl>
+        </expiry>
+        <heap unit="entries">500</heap>
+        <offheap unit="MB">50</offheap>
+        <disk unit="MB">100</disk>
+        <persistence strategy="localTempSwap"/>
+    </cache>
+    
+    <!-- Invoice Item Cache -->
+    <cache alias="invoiceItem">
+        <expiry>
+            <ttl unit="hours">2</ttl>
+        </expiry>
+        <heap unit="entries">2000</heap>
+        <offheap unit="MB">30</offheap>
+        <disk unit="MB">80</disk>
+        <persistence strategy="localTempSwap"/>
+    </cache>
+    
+    <!-- Invoice PDF Cache -->
+    <cache alias="invoicePDF">
+        <expiry>
+            <ttl unit="hours">4</ttl>
+        </expiry>
+        <heap unit="entries">100</heap>
+        <offheap unit="MB">20</offheap>
+        <disk unit="MB">200</disk>
+        <persistence strategy="localTempSwap"/>
+    </cache>
+    
+    <!-- Query Result Cache -->
+    <cache alias="queryCache">
+        <expiry>
+            <ttl unit="minutes">15</ttl>
+        </expiry>
+        <heap unit="entries">100</heap>
+    </cache>
+    
+    <!-- Customer Statistics Cache -->
+    <cache alias="customerStats">
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+        <heap unit="entries">50</heap>
+    </cache>
+    
+</config>
