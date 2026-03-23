@@ -1,0 +1,803 @@
+{
+	"info": {
+		"_postman_id": "invoice-automation-api-v1",
+		"name": "Invoice Automation API v1",
+		"description": "Complete API collection for Invoice Automation System v1.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "General Operations",
+			"item": [
+				{
+					"name": "Application Home",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": ["{{baseUrl}}"],
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invoice Management",
+			"item": [
+				{
+					"name": "Create Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Acme Corporation\",\n  \"invoiceDate\": \"2024-03-24\",\n  \"poNumber\": \"PO-2024-001\",\n  \"companyCode\": \"ACME\",\n  \"vendorName\": \"Global Supplies Inc\",\n  \"address\": \"123 Business St, City, State 12345\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Invoice",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Acme Corporation Updated\",\n  \"invoiceDate\": \"2024-03-24\",\n  \"poNumber\": \"PO-2024-001-UPDATED\",\n  \"companyCode\": \"ACME\",\n  \"vendorName\": \"Global Supplies Inc\",\n  \"address\": \"123 Business St, City, State 12345\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/search?customerName=Acme&startDate=2024-01-01&endDate=2024-12-31&companyCode=ACME",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "search"],
+							"query": [
+								{
+									"key": "customerName",
+									"value": "Acme"
+								},
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								},
+								{
+									"key": "companyCode",
+									"value": "ACME"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoices by Customer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/customer/Acme Corporation",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "customer", "Acme Corporation"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoices by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/date-range?startDate=2024-01-01&endDate=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "date-range"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload PDF for Invoice",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/pdf",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}", "pdf"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Invoice PDF",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/pdf",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}", "pdf"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice PDF",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/pdf",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "{{invoiceId}}", "pdf"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "statistics"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Revenue by Customer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/revenue-by-customer",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "revenue-by-customer"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multiple Invoices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"customerName\": \"Customer One\",\n    \"invoiceDate\": \"2024-03-24\",\n    \"poNumber\": \"PO-001\",\n    \"companyCode\": \"CUST1\",\n    \"vendorName\": \"Vendor One\",\n    \"address\": \"Address One\"\n  },\n  {\n    \"customerName\": \"Customer Two\",\n    \"invoiceDate\": \"2024-03-24\",\n    \"poNumber\": \"PO-002\",\n    \"companyCode\": \"CUST2\",\n    \"vendorName\": \"Vendor Two\",\n    \"address\": \"Address Two\"\n  }\n]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/bulk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "bulk"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Invoices",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"invoice-id-1\", \"invoice-id-2\", \"invoice-id-3\"]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoices/bulk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoices", "bulk"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invoice Item Management",
+			"item": [
+				{
+					"name": "Create Invoice Item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemDescription\": \"Professional Services\",\n  \"quantity\": 10,\n  \"unitPrice\": 150.00,\n  \"itemCode\": \"SRV-001\",\n  \"hsnCode\": \"9983\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Invoice Items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice Item by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "{{itemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Invoice Item",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemDescription\": \"Professional Services Updated\",\n  \"quantity\": 12,\n  \"unitPrice\": 175.00,\n  \"itemCode\": \"SRV-001-UPD\",\n  \"hsnCode\": \"9983\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "{{itemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice Item",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "{{itemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Items by Invoice ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/invoice/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "invoice", "{{invoiceId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Item to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemDescription\": \"Consulting Services\",\n  \"quantity\": 5,\n  \"unitPrice\": 200.00,\n  \"itemCode\": \"CONS-001\",\n  \"hsnCode\": \"9983\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/invoice/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "invoice", "{{invoiceId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Item from Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/invoice/{{invoiceId}}/item/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "invoice", "{{invoiceId}}", "item", "{{itemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Items by Description",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/search?description=Services",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "search"],
+							"query": [
+								{
+									"key": "description",
+									"value": "Services"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Items by Item Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/code/SRV-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "code", "SRV-001"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multiple Items for Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"itemDescription\": \"Item One\",\n    \"quantity\": 1,\n    \"unitPrice\": 100.00,\n    \"itemCode\": \"ITEM-001\",\n    \"hsnCode\": \"9983\"\n  },\n  {\n    \"itemDescription\": \"Item Two\",\n    \"quantity\": 2,\n    \"unitPrice\": 50.00,\n    \"itemCode\": \"ITEM-002\",\n    \"hsnCode\": \"9983\"\n  }\n]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/invoice-items/invoice/{{invoiceId}}/bulk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "invoice-items", "invoice", "{{invoiceId}}", "bulk"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Management",
+			"item": [
+				{
+					"name": "Upload File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/upload",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "upload"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Multiple Files",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "files",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/upload/bulk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "upload", "bulk"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download File",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/download/{{fileName}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "download", "{{fileName}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "View File",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/view/{{fileName}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "view", "{{fileName}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete File",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/{{fileName}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "{{fileName}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List All Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get File Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/files/{{fileName}}/info",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "files", "{{fileName}}", "info"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports and Analytics",
+			"item": [
+				{
+					"name": "Get Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "dashboard"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Monthly Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/monthly/2024/3",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "monthly", "2024", "3"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Yearly Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/yearly/2024",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "yearly", "2024"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer Performance Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/customers/performance",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "customers", "performance"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer Trends",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/customers/trends?startDate=2024-01-01&endDate=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "customers", "trends"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Revenue Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/revenue?startDate=2024-01-01&endDate=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "revenue"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Financial Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/financial-summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "financial-summary"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Report to CSV - Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/export/invoices",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "export", "invoices"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Report to CSV - Customers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/export/customers",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "export", "customers"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Report to CSV - Revenue",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reports/export/revenue",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "reports", "export", "revenue"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "invoiceId",
+			"value": "your-invoice-id-here",
+			"type": "string"
+		},
+		{
+			"key": "itemId",
+			"value": "your-item-id-here",
+			"type": "string"
+		},
+		{
+			"key": "fileName",
+			"value": "your-file-name.pdf",
+			"type": "string"
+		}
+	]
+}

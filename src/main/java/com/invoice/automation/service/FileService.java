@@ -3,6 +3,7 @@ package com.invoice.automation.service;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -121,7 +122,7 @@ public interface FileService {
      *
      * @return the path to the upload directory
      */
-    String createUploadDirectoryIfNotExists();
+    Path createUploadDirectoryIfNotExists();
 
     /**
      * Cleans up old files based on age criteria.

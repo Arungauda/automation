@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,10 +24,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * REST controller for managing invoices and their related operations.
@@ -248,13 +253,13 @@ public class InvoiceController extends BaseController {
             String fileName = file.getOriginalFilename();
             
             InvoiceHeader updatedInvoice = invoiceHeaderService.attachPdfToInvoice(id, pdfData, fileName);
-            PdfResponse response = new PdfResponse(fileName, pdfData.length, "PDF uploaded successfully");
+            PdfResponse response = PdfResponse.full(fileName, "application/pdf", (long) pdfData.length, pdfData, java.time.LocalDateTime.now(), updatedInvoice.getInvoiceNumber());
 
             logOperationEnd(operation, user);
             return success(response);
         } catch (Exception e) {
             log.error("Error uploading PDF: {}", e.getMessage(), e);
-            throw e;
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -303,30 +308,95 @@ public class InvoiceController extends BaseController {
 
     // ========== Statistics and Reporting ==========
 
-    @Operation(summary = "Get invoice statistics", description = "Retrieves statistical information about invoices")
+    @Operation(summary = "Get invoice statistics", description = "Retrieves comprehensive statistics about invoices")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
+    })
     @GetMapping("/statistics")
-    public ResponseEntity<InvoiceStatisticsResponse> getStatistics(WebRequest request) {
-        String operation = "GET_STATISTICS";
+    @Cacheable(value = "queryCache", key = "'statistics'")
+    public ResponseEntity<Map<String, Object>> getInvoiceStatistics(WebRequest request) {
+        
+        String operation = "GET_INVOICE_STATISTICS";
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        Long totalCount = invoiceHeaderService.getTotalInvoiceCount();
-        List<InvoiceHeader> todayInvoices = invoiceHeaderService.getInvoicesForToday();
-        List<InvoiceHeader> monthInvoices = invoiceHeaderService.getInvoicesForThisMonth();
-
-        InvoiceStatisticsResponse response = new InvoiceStatisticsResponse(
-                totalCount,
-                (long) todayInvoices.size(),
-                (long) monthInvoices.size(),
-                invoiceHeaderService.getInvoiceCountByDateRange(
-                        LocalDate.now().withDayOfMonth(1),
-                        LocalDate.now()
-                )
+        List<InvoiceHeader> allInvoices = invoiceHeaderService.getAllInvoiceHeaders();
+        LocalDate today = LocalDate.now();
+        
+        Map<String, Object> statistics = Map.of(
+                "totalInvoices", allInvoices.size(),
+                "todayInvoices", allInvoices.stream()
+                        .filter(invoice -> invoice.getInvoiceDate().equals(today))
+                        .count(),
+                "currentMonthInvoices", allInvoices.stream()
+                        .filter(invoice -> invoice.getInvoiceDate().getMonth() == today.getMonth() &&
+                                invoice.getInvoiceDate().getYear() == today.getYear())
+                        .count(),
+                "currentYearInvoices", allInvoices.stream()
+                        .filter(invoice -> invoice.getInvoiceDate().getYear() == today.getYear())
+                        .count(),
+                "totalRevenue", allInvoices.stream()
+                        .flatMap(invoice -> invoice.getItems() != null ? invoice.getItems().stream() : Stream.empty())
+                        .mapToDouble(item -> item.getTotalAmount().doubleValue())
+                        .sum(),
+                "averageRevenuePerInvoice", allInvoices.isEmpty() ? 0.0 :
+                        allInvoices.stream()
+                                .flatMap(invoice -> invoice.getItems() != null ? invoice.getItems().stream() : Stream.empty())
+                                .mapToDouble(item -> item.getTotalAmount().doubleValue())
+                                .sum() / allInvoices.size(),
+                "uniqueCustomers", allInvoices.stream()
+                        .map(InvoiceHeader::getCustomerName)
+                        .distinct()
+                        .count(),
+                "pdfAttachmentRate", allInvoices.isEmpty() ? 0.0 :
+                        (double) allInvoices.stream()
+                                .filter(invoice -> invoice.getInvoicePDF() != null)
+                                .count() / allInvoices.size() * 100
         );
 
         logOperationEnd(operation, user);
-        return success(response);
+        return success(statistics);
     }
+
+    @Operation(summary = "Get revenue by customer", description = "Retrieves revenue breakdown by customer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Revenue data retrieved successfully")
+    })
+    @GetMapping("/revenue-by-customer")
+    @Cacheable(value = "queryCache", key = "'revenueByCustomer'")
+    public ResponseEntity<List<Map<String, Object>>> getRevenueByCustomer(WebRequest request) {
+        
+        String operation = "GET_REVENUE_BY_CUSTOMER";
+        String user = getCurrentUser(request);
+        logOperationStart(operation, user);
+
+        List<InvoiceHeader> allInvoices = invoiceHeaderService.getAllInvoiceHeaders();
+        
+        List<Map<String, Object>> revenueByCustomer = allInvoices.stream()
+                .collect(Collectors.groupingBy(InvoiceHeader::getCustomerName))
+                .entrySet().stream()
+                .map(entry -> {
+                    List<InvoiceHeader> customerInvoices = entry.getValue();
+                    double totalRevenue = customerInvoices.stream()
+                            .flatMap(invoice -> invoice.getItems() != null ? invoice.getItems().stream() : Stream.empty())
+                            .mapToDouble(item -> item.getTotalAmount().doubleValue())
+                            .sum();
+                    
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("customerName", entry.getKey());
+                    result.put("totalRevenue", totalRevenue);
+                    result.put("invoiceCount", customerInvoices.size());
+                    result.put("averageRevenuePerInvoice", customerInvoices.isEmpty() ? 0.0 : totalRevenue / customerInvoices.size());
+                    return result;
+                })
+                .sorted((a, b) -> Double.compare((Double) b.get("totalRevenue"), (Double) a.get("totalRevenue")))
+                .collect(Collectors.toList());
+
+        logOperationEnd(operation, user);
+        return success(revenueByCustomer);
+    }
+
+
 
     // ========== Bulk Operations ==========
 
@@ -399,7 +469,11 @@ public class InvoiceController extends BaseController {
                 invoice.getVendorName(),
                 invoice.getAddress(),
                 itemResponses,
-                invoice.getInvoicePDF() != null
+                itemResponses.stream()
+                        .map(InvoiceItemResponse::totalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add),
+                invoice.getInvoicePDF() != null,
+                invoice.getInvoiceDate()
         );
     }
 

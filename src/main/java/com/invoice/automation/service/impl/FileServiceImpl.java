@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -200,28 +201,23 @@ public class FileServiceImpl implements FileService {
         }
         
         log.debug("Getting file info for: {}", fileName);
-        
-        try {
-            Path uploadPath = createUploadDirectoryIfNotExists();
-            Path filePath = uploadPath.resolve(fileName).normalize();
-            
-            if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
-                throw new PdfStorageException("File not found: " + fileName);
-            }
-            
-            Map<String, Object> fileInfo = pathToFileInfo(filePath);
-            
-            // Add additional metadata
-            Map<String, Object> metadata = extractFileMetadata(fileName);
-            fileInfo.put("metadata", metadata);
-            
-            log.debug("Retrieved file info for: {}", fileName);
-            return fileInfo;
-            
-        } catch (IOException e) {
-            log.error("Error getting file info for {}: {}", fileName, e.getMessage(), e);
-            throw new PdfStorageException("Failed to get file info: " + e.getMessage());
+
+        Path uploadPath = createUploadDirectoryIfNotExists();
+        Path filePath = uploadPath.resolve(fileName).normalize();
+
+        if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
+            throw new PdfStorageException("File not found: " + fileName);
         }
+
+        Map<String, Object> fileInfo = pathToFileInfo(filePath);
+
+        // Add additional metadata
+        Map<String, Object> metadata = extractFileMetadata(fileName);
+        fileInfo.put("metadata", metadata);
+
+        log.debug("Retrieved file info for: {}", fileName);
+        return fileInfo;
+
     }
 
     @Override
@@ -229,15 +225,10 @@ public class FileServiceImpl implements FileService {
         if (fileName == null || fileName.trim().isEmpty()) {
             return false;
         }
-        
-        try {
-            Path uploadPath = createUploadDirectoryIfNotExists();
-            Path filePath = uploadPath.resolve(fileName).normalize();
-            return Files.exists(filePath) && Files.isRegularFile(filePath);
-        } catch (IOException e) {
-            log.error("Error checking if file exists {}: {}", fileName, e.getMessage());
-            return false;
-        }
+
+        Path uploadPath = createUploadDirectoryIfNotExists();
+        Path filePath = uploadPath.resolve(fileName).normalize();
+        return Files.exists(filePath) && Files.isRegularFile(filePath);
     }
 
     @Override
@@ -306,14 +297,14 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public String createUploadDirectoryIfNotExists() {
+    public Path createUploadDirectoryIfNotExists() {
         try {
             Path uploadPath = Paths.get(UPLOAD_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
                 log.info("Created upload directory: {}", uploadPath.toAbsolutePath());
             }
-            return uploadPath.toAbsolutePath().toString();
+            return uploadPath.toAbsolutePath();
         } catch (IOException e) {
             log.error("Error creating upload directory: {}", e.getMessage(), e);
             throw new PdfStorageException("Failed to create upload directory: " + e.getMessage());

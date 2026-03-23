@@ -17,8 +17,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.constraints.NotNull;
+import org.springframework.web.context.request.WebRequest;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -386,10 +389,12 @@ public class ReportController extends BaseController {
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)
-                .map(entry -> Map.of(
-                        "customerName", entry.getKey(),
-                        "invoiceCount", entry.getValue()
-                ))
+                .map(entry -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("customerName", entry.getKey());
+                    map.put("invoiceCount", entry.getValue());
+                    return map;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -397,17 +402,19 @@ public class ReportController extends BaseController {
         return invoices.stream()
                 .sorted((a, b) -> b.getInvoiceDate().compareTo(a.getInvoiceDate()))
                 .limit(limit)
-                .map(invoice -> Map.of(
-                        "id", invoice.getId(),
-                        "invoiceNumber", invoice.getInvoiceNumber(),
-                        "customerName", invoice.getCustomerName(),
-                        "invoiceDate", invoice.getInvoiceDate(),
-                        "totalAmount", calculateTotalRevenue(List.of(invoice))
-                ))
+                .map(invoice -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", invoice.getId());
+                    map.put("invoiceNumber", invoice.getInvoiceNumber());
+                    map.put("customerName", invoice.getCustomerName());
+                    map.put("invoiceDate", invoice.getInvoiceDate());
+                    map.put("totalAmount", calculateTotalRevenue(List.of(invoice)));
+                    return map;
+                })
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> getDailyBreakdown(List<InvoiceHeader> invoices) {
+    private Map<String, Long> getDailyBreakdown(List<InvoiceHeader> invoices) {
         return invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> invoice.getInvoiceDate().toString(),
@@ -415,7 +422,7 @@ public class ReportController extends BaseController {
                 ));
     }
 
-    private Map<String, Object> getCustomerBreakdown(List<InvoiceHeader> invoices) {
+    private Map<String, Long> getCustomerBreakdown(List<InvoiceHeader> invoices) {
         return invoices.stream()
                 .collect(Collectors.groupingBy(
                         InvoiceHeader::getCustomerName,
@@ -423,7 +430,7 @@ public class ReportController extends BaseController {
                 ));
     }
 
-    private Map<String, Object> getCompanyCodeBreakdown(List<InvoiceHeader> invoices) {
+    private Map<String, Long> getCompanyCodeBreakdown(List<InvoiceHeader> invoices) {
         return invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> invoice.getCompanyCode() != null ? invoice.getCompanyCode() : "N/A",
@@ -431,7 +438,7 @@ public class ReportController extends BaseController {
                 ));
     }
 
-    private Map<String, Object> getMonthlyBreakdown(List<InvoiceHeader> invoices) {
+    private Map<String, Long> getMonthlyBreakdown(List<InvoiceHeader> invoices) {
         return invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> invoice.getInvoiceDate().getYear() + "-" + 
@@ -474,27 +481,42 @@ public class ReportController extends BaseController {
     }
 
     private Map<String, Object> getRevenueByCustomer(List<InvoiceHeader> invoices) {
-        return invoices.stream()
+        Map<String, Double> revenueMap = invoices.stream()
                 .collect(Collectors.groupingBy(
                         InvoiceHeader::getCustomerName,
                         Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
                 ));
+        return revenueMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> (Object) entry.getValue()
+                ));
     }
 
     private Map<String, Object> getRevenueByCompanyCode(List<InvoiceHeader> invoices) {
-        return invoices.stream()
+        Map<String, Double> revenueMap = invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> invoice.getCompanyCode() != null ? invoice.getCompanyCode() : "N/A",
                         Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
                 ));
+        return revenueMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> (Object) entry.getValue()
+                ));
     }
 
     private Map<String, Object> getRevenueByMonth(List<InvoiceHeader> invoices) {
-        return invoices.stream()
+        Map<String, Double> revenueMap = invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> invoice.getInvoiceDate().getYear() + "-" + 
                                 String.format("%02d", invoice.getInvoiceDate().getMonthValue()),
                         Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
+                ));
+        return revenueMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> (Object) entry.getValue()
                 ));
     }
 
@@ -504,10 +526,15 @@ public class ReportController extends BaseController {
     }
 
     private Map<String, Object> getRevenueByYear(List<InvoiceHeader> invoices) {
-        return invoices.stream()
+        Map<String, Double> revenueMap = invoices.stream()
                 .collect(Collectors.groupingBy(
                         invoice -> String.valueOf(invoice.getInvoiceDate().getYear()),
                         Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
+                ));
+        return revenueMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> (Object) entry.getValue()
                 ));
     }
 

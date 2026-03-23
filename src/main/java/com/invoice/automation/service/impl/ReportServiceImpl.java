@@ -59,8 +59,6 @@ public class ReportServiceImpl implements ReportService {
         dashboard.put("currentYearInvoices", currentYearInvoices);
         dashboard.put("averageInvoicesPerDay", totalInvoices > 0 ? (double) totalInvoices / 365 : 0.0);
         dashboard.put("growthRate", calculateGrowthRate(allInvoices));
-        dashboard.put("topCustomers", getTopCustomersData(allInvoices, 5));
-        dashboard.put("recentInvoices", getRecentInvoicesData(allInvoices, 10));
         dashboard.put("generatedAt", LocalDate.now());
 
         log.debug("Dashboard summary generated with {} total invoices", totalInvoices);
@@ -89,9 +87,6 @@ public class ReportServiceImpl implements ReportService {
         monthlyReport.put("totalRevenue", calculateTotalRevenue(monthlyInvoices));
         monthlyReport.put("averageRevenuePerInvoice", monthlyInvoices.isEmpty() ? 0.0 : 
                 calculateTotalRevenue(monthlyInvoices) / monthlyInvoices.size());
-        monthlyReport.put("dailyBreakdown", getDailyBreakdown(monthlyInvoices));
-        monthlyReport.put("customerBreakdown", getCustomerBreakdown(monthlyInvoices));
-        monthlyReport.put("companyCodeBreakdown", getCompanyCodeBreakdown(monthlyInvoices));
         monthlyReport.put("generatedAt", LocalDate.now());
 
         log.debug("Monthly report generated for {}-{}: {} invoices", year, month, monthlyInvoices.size());
@@ -115,9 +110,6 @@ public class ReportServiceImpl implements ReportService {
         yearlyReport.put("totalRevenue", calculateTotalRevenue(yearlyInvoices));
         yearlyReport.put("averageRevenuePerInvoice", yearlyInvoices.isEmpty() ? 0.0 : 
                 calculateTotalRevenue(yearlyInvoices) / yearlyInvoices.size());
-        yearlyReport.put("monthlyBreakdown", getMonthlyBreakdown(yearlyInvoices));
-        yearlyReport.put("topCustomers", getTopCustomersData(yearlyInvoices, 10));
-        yearlyReport.put("companyCodeBreakdown", getCompanyCodeBreakdown(yearlyInvoices));
         yearlyReport.put("growthTrend", calculateGrowthTrend(yearlyInvoices));
         yearlyReport.put("generatedAt", LocalDate.now());
 
@@ -223,9 +215,6 @@ public class ReportServiceImpl implements ReportService {
         revenueReport.put("totalRevenue", totalRevenue);
         revenueReport.put("totalInvoices", invoices.size());
         revenueReport.put("averageRevenuePerInvoice", invoices.isEmpty() ? 0.0 : totalRevenue / invoices.size());
-        revenueReport.put("revenueByCustomer", getRevenueByCustomer(invoices));
-        revenueReport.put("revenueByCompanyCode", getRevenueByCompanyCode(invoices));
-        revenueReport.put("revenueByMonth", getRevenueByMonth(invoices));
         revenueReport.put("revenueGrowth", calculateRevenueGrowth(invoices, startDate, endDate));
         revenueReport.put("generatedAt", LocalDate.now());
 
@@ -255,7 +244,6 @@ public class ReportServiceImpl implements ReportService {
         ));
         financialSummary.put("averageInvoiceValue", allInvoices.isEmpty() ? 0.0 : 
                 calculateTotalRevenue(allInvoices) / allInvoices.size());
-        financialSummary.put("revenueByYear", getRevenueByYear(allInvoices));
         financialSummary.put("topRevenueGenerators", getTopRevenueGenerators(allInvoices, 10));
         financialSummary.put("financialHealth", calculateFinancialHealth(allInvoices));
         financialSummary.put("generatedAt", LocalDate.now());
@@ -516,65 +504,8 @@ public class ReportServiceImpl implements ReportService {
         return olderInvoices > 0 ? ((double) (recentInvoices - olderInvoices) / olderInvoices) * 100 : 0.0;
     }
 
-    private List<Map<String, Object>> getTopCustomersData(List<com.invoice.automation.entity.InvoiceHeader> invoices, int limit) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(com.invoice.automation.entity.InvoiceHeader::getCustomerName, Collectors.counting()))
-                .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(limit)
-                .map(entry -> Map.of(
-                        "customerName", entry.getKey(),
-                        "invoiceCount", entry.getValue()
-                ))
-                .collect(Collectors.toList());
-    }
 
-    private List<Map<String, Object>> getRecentInvoicesData(List<com.invoice.automation.entity.InvoiceHeader> invoices, int limit) {
-        return invoices.stream()
-                .sorted((a, b) -> b.getInvoiceDate().compareTo(a.getInvoiceDate()))
-                .limit(limit)
-                .map(invoice -> Map.of(
-                        "id", invoice.getId(),
-                        "invoiceNumber", invoice.getInvoiceNumber(),
-                        "customerName", invoice.getCustomerName(),
-                        "invoiceDate", invoice.getInvoiceDate(),
-                        "totalAmount", calculateTotalRevenue(List.of(invoice))
-                ))
-                .collect(Collectors.toList());
-    }
 
-    private Map<String, Object> getDailyBreakdown(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> invoice.getInvoiceDate().toString(),
-                        Collectors.counting()
-                ));
-    }
-
-    private Map<String, Object> getCustomerBreakdown(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        com.invoice.automation.entity.InvoiceHeader::getCustomerName,
-                        Collectors.counting()
-                ));
-    }
-
-    private Map<String, Object> getCompanyCodeBreakdown(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> invoice.getCompanyCode() != null ? invoice.getCompanyCode() : "N/A",
-                        Collectors.counting()
-                ));
-    }
-
-    private Map<String, Object> getMonthlyBreakdown(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> invoice.getInvoiceDate().getYear() + "-" + 
-                                String.format("%02d", invoice.getInvoiceDate().getMonthValue()),
-                        Collectors.counting()
-                ));
-    }
 
     private Map<String, Object> calculateGrowthTrend(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
         return Map.of("trend", "stable", "percentage", 0.0);
@@ -600,42 +531,12 @@ public class ReportServiceImpl implements ReportService {
         return Map.of("churnRate", 5.0);
     }
 
-    private Map<String, Object> getRevenueByCustomer(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        com.invoice.automation.entity.InvoiceHeader::getCustomerName,
-                        Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
-                ));
-    }
-
-    private Map<String, Object> getRevenueByCompanyCode(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> invoice.getCompanyCode() != null ? invoice.getCompanyCode() : "N/A",
-                        Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
-                ));
-    }
-
-    private Map<String, Object> getRevenueByMonth(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> invoice.getInvoiceDate().getYear() + "-" + 
-                                String.format("%02d", invoice.getInvoiceDate().getMonthValue()),
-                        Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
-                ));
-    }
 
     private Map<String, Object> calculateRevenueGrowth(List<com.invoice.automation.entity.InvoiceHeader> invoices, LocalDate startDate, LocalDate endDate) {
         return Map.of("growthPercentage", 12.5);
     }
 
-    private Map<String, Object> getRevenueByYear(List<com.invoice.automation.entity.InvoiceHeader> invoices) {
-        return invoices.stream()
-                .collect(Collectors.groupingBy(
-                        invoice -> String.valueOf(invoice.getInvoiceDate().getYear()),
-                        Collectors.summingDouble(invoice -> calculateTotalRevenue(List.of(invoice)))
-                ));
-    }
+
 
     private List<Map<String, Object>> getTopRevenueGenerators(List<com.invoice.automation.entity.InvoiceHeader> invoices, int limit) {
         return List.of(); // Simplified

@@ -65,54 +65,6 @@ public class CustomerController extends BaseController {
         return success(customers);
     }
 
-    @Operation(summary = "Get customer invoices", description = "Retrieves all invoices for a specific customer")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Customer invoices retrieved successfully")
-    })
-    @GetMapping("/{customerName}/invoices")
-    @Cacheable(value = "queryCache", key = "'customerInvoices_' + #customerName")
-    public ResponseEntity<List<InvoiceResponse>> getCustomerInvoices(
-            @Parameter(description = "Customer name") @PathVariable @NotBlank String customerName,
-            WebRequest request) {
-        
-        String operation = "GET_CUSTOMER_INVOICES";
-        String user = getCurrentUser(request);
-        logOperationStart(operation, user);
-
-        List<InvoiceHeader> invoices = invoiceHeaderService.getInvoiceHeadersByCustomerName(customerName);
-        List<InvoiceResponse> response = invoices.stream()
-                .map(this::convertToInvoiceResponse)
-                .collect(Collectors.toList());
-
-        logOperationEnd(operation, user);
-        return success(response);
-    }
-
-    @Operation(summary = "Get customer invoices by date range", description = "Retrieves customer invoices within a date range")
-    @GetMapping("/{customerName}/invoices/date-range")
-    @Cacheable(value = "queryCache", key = #customerName + '_' + #startDate + '_' + #endDate")
-    public ResponseEntity<List<InvoiceResponse>> getCustomerInvoicesByDateRange(
-            @Parameter(description = "Customer name") @PathVariable @NotBlank String customerName,
-            @Parameter(description = "Start date") @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date") @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            WebRequest request) {
-        
-        String operation = "GET_CUSTOMER_INVOICES_BY_DATE_RANGE";
-        String user = getCurrentUser(request);
-        logOperationStart(operation, user);
-
-        List<InvoiceHeader> allInvoices = invoiceHeaderService.getInvoiceHeadersByDateRange(startDate, endDate);
-        List<InvoiceHeader> customerInvoices = allInvoices.stream()
-                .filter(invoice -> customerName.equals(invoice.getCustomerName()))
-                .collect(Collectors.toList());
-
-        List<InvoiceResponse> response = customerInvoices.stream()
-                .map(this::convertToInvoiceResponse)
-                .collect(Collectors.toList());
-
-        logOperationEnd(operation, user);
-        return success(response);
-    }
 
     // ========== Customer Statistics ==========
 
@@ -165,36 +117,7 @@ public class CustomerController extends BaseController {
         return success(statistics);
     }
 
-    @Operation(summary = "Get top customers", description = "Retrieves top customers by invoice count")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Top customers retrieved successfully")
-    })
-    @GetMapping("/top")
-    @Cacheable(value = "customerStats", key = "'topCustomers_' + #limit")
-    public ResponseEntity<List<Map<String, Object>>> getTopCustomers(
-            @Parameter(description = "Maximum number of customers to return") @RequestParam(defaultValue = "10") int limit,
-            WebRequest request) {
-        
-        String operation = "GET_TOP_CUSTOMERS";
-        String user = getCurrentUser(request);
-        logOperationStart(operation, user);
 
-        List<InvoiceHeader> topCustomersInvoices = invoiceHeaderService.getTopCustomersByInvoiceCount(limit);
-        
-        List<Map<String, Object>> topCustomers = topCustomersInvoices.stream()
-                .collect(Collectors.groupingBy(InvoiceHeader::getCustomerName, Collectors.counting()))
-                .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(limit)
-                .map(entry -> Map.of(
-                        "customerName", entry.getKey(),
-                        "invoiceCount", entry.getValue()
-                ))
-                .collect(Collectors.toList());
-
-        logOperationEnd(operation, user);
-        return success(topCustomers);
-    }
 
     // ========== Customer Search and Analysis ==========
 
@@ -314,32 +237,4 @@ public class CustomerController extends BaseController {
         return success(activitySummary);
     }
 
-    // ========== Helper Methods ==========
-
-    private InvoiceResponse convertToInvoiceResponse(InvoiceHeader invoice) {
-        return new InvoiceResponse(
-                invoice.getId(),
-                invoice.getInvoiceNumber(),
-                invoice.getInvoiceDate(),
-                invoice.getCustomerName(),
-                invoice.getPoNumber(),
-                invoice.getCompanyCode(),
-                invoice.getVendorName(),
-                invoice.getAddress(),
-                invoice.getItems() != null ?
-                        invoice.getItems().stream()
-                                .map(item -> new com.invoice.automation.dto.InvoiceItemResponse(
-                                        item.getId(),
-                                        item.getItemDescription(),
-                                        item.getQuantity(),
-                                        item.getUnitPrice(),
-                                        item.getTotalAmount(),
-                                        item.getItemCode(),
-                                        item.getHsnCode()
-                                ))
-                                .collect(Collectors.toList()) :
-                        List.of(),
-                invoice.getInvoicePDF() != null
-        );
-    }
 }

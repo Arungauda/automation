@@ -2,6 +2,7 @@ package com.invoice.automation.controller;
 
 import com.invoice.automation.dto.InvoiceItemRequest;
 import com.invoice.automation.dto.InvoiceItemResponse;
+import com.invoice.automation.entity.InvoiceHeader;
 import com.invoice.automation.entity.InvoiceItem;
 import com.invoice.automation.service.InvoiceItemService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.web.context.request.WebRequest;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -178,7 +181,7 @@ public class InvoiceItemController extends BaseController {
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        List<InvoiceItem> items = invoiceItemService.getItemsByInvoiceId(invoiceId);
+        List<InvoiceItem> items = invoiceItemService.getItemsByInvoiceHeaderId(invoiceId);
         List<InvoiceItemResponse> response = items.stream()
                 .map(this::convertToInvoiceItemResponse)
                 .collect(Collectors.toList());
@@ -206,7 +209,11 @@ public class InvoiceItemController extends BaseController {
         logOperationStart(operation, user);
 
         InvoiceItem invoiceItem = convertToInvoiceItem(itemRequest);
-        InvoiceItem savedItem = invoiceItemService.addItemToInvoice(invoiceId, invoiceItem);
+        // Set the invoice header reference
+        InvoiceHeader header = new InvoiceHeader();
+        header.setId(invoiceId);
+        invoiceItem.setInvoiceHeader(header);
+        InvoiceItem savedItem = invoiceItemService.saveInvoiceItem(invoiceItem);
         InvoiceItemResponse response = convertToInvoiceItemResponse(savedItem);
 
         logOperationEnd(operation, user);
@@ -231,7 +238,7 @@ public class InvoiceItemController extends BaseController {
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        invoiceItemService.removeItemFromInvoice(invoiceId, itemId);
+        invoiceItemService.deleteInvoiceItem(itemId);
         logOperationEnd(operation, user);
 
         return noContent();
@@ -251,7 +258,7 @@ public class InvoiceItemController extends BaseController {
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        List<InvoiceItem> items = invoiceItemService.searchItemsByDescription(description);
+        List<InvoiceItem> items = invoiceItemService.getItemsByDescriptionContaining(description);
         List<InvoiceItemResponse> response = items.stream()
                 .map(this::convertToInvoiceItemResponse)
                 .collect(Collectors.toList());
@@ -272,13 +279,9 @@ public class InvoiceItemController extends BaseController {
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        List<InvoiceItem> items = invoiceItemService.getItemsByPriceRange(minPrice, maxPrice);
-        List<InvoiceItemResponse> response = items.stream()
-                .map(this::convertToInvoiceItemResponse)
-                .collect(Collectors.toList());
-
-        logOperationEnd(operation, user);
-        return success(response);
+        // Note: getItemsByPriceRange is not available in service interface
+        // This method needs to be implemented in the service or use different approach
+        throw new UnsupportedOperationException("getItemsByPriceRange method not implemented in service");
     }
 
     @Operation(summary = "Get items by item code", description = "Retrieves items by their item code")
@@ -321,7 +324,7 @@ public class InvoiceItemController extends BaseController {
                 .map(this::convertToInvoiceItem)
                 .collect(Collectors.toList());
 
-        List<InvoiceItem> savedItems = invoiceItemService.addMultipleItemsToInvoice(invoiceId, items);
+        List<InvoiceItem> savedItems = invoiceItemService.saveAllItemsForInvoice(invoiceId, items);
         List<InvoiceItemResponse> response = savedItems.stream()
                 .map(this::convertToInvoiceItemResponse)
                 .collect(Collectors.toList());
@@ -337,7 +340,7 @@ public class InvoiceItemController extends BaseController {
                 .itemDescription(request.itemDescription())
                 .quantity(request.quantity())
                 .unitPrice(request.unitPrice())
-                .totalAmount(request.totalAmount())
+                .totalAmount(request.getTotalAmount())
                 .itemCode(request.itemCode())
                 .hsnCode(request.hsnCode())
                 .build();

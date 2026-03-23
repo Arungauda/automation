@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -74,7 +76,7 @@ public class FileController extends BaseController {
             
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
-            PdfResponse response = new PdfResponse(fileName, file.getSize(), "File uploaded successfully");
+            PdfResponse response = PdfResponse.metadata(fileName, determineContentType(fileName), file.getSize(), LocalDateTime.now(), null);
             
             logOperationEnd(operation, user);
             return success(response);
@@ -110,7 +112,7 @@ public class FileController extends BaseController {
                             
                             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                             
-                            return new PdfResponse(fileName, file.getSize(), "File uploaded successfully");
+                            return new PdfResponse(fileName, "application/pdf", file.getSize(), null, LocalDateTime.now(), null);
                         } catch (IOException e) {
                             log.error("Error uploading file {}: {}", file.getOriginalFilename(), e.getMessage());
                             throw new PdfStorageException("Failed to upload file: " + file.getOriginalFilename());
