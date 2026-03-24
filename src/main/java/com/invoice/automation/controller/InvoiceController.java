@@ -370,7 +370,7 @@ public class InvoiceController extends BaseController {
         String user = getCurrentUser(request);
         logOperationStart(operation, user);
 
-        List<InvoiceHeader> allInvoices = invoiceHeaderService.getAllInvoiceHeaders();
+        List<InvoiceHeader> allInvoices = invoiceHeaderService.getAllInvoicesWithItems();
         
         List<Map<String, Object>> revenueByCustomer = allInvoices.stream()
                 .collect(Collectors.groupingBy(InvoiceHeader::getCustomerName))

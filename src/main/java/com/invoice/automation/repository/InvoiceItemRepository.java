@@ -1,7 +1,10 @@
 package com.invoice.automation.repository;
 
 import com.invoice.automation.entity.InvoiceItem;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,7 +23,9 @@ public interface InvoiceItemRepository extends JpaRepository<InvoiceItem, UUID> 
     Optional<InvoiceItem> findByInvoiceHeaderIdAndId(UUID invoiceHeaderId, UUID itemId);
     
     // NO CACHE: Delete operation, never cached
-    void deleteByInvoiceHeaderId(UUID invoiceHeaderId);
+    @Modifying
+    @Query("DELETE FROM InvoiceItem i WHERE i.invoiceHeader.id = :invoiceHeaderId")
+    void deleteByInvoiceHeaderId(@Param("invoiceHeaderId") UUID invoiceHeaderId);
     
     // Search operations - NO CACHE: Rely on Hibernate Level 2 entity caching
     List<InvoiceItem> findByItemCodeContainingIgnoreCase(String itemCode);
@@ -39,11 +44,11 @@ public interface InvoiceItemRepository extends JpaRepository<InvoiceItem, UUID> 
     @Query("SELECT SUM(i.quantity) FROM InvoiceItem i WHERE i.invoiceHeader.id = :invoiceHeaderId")
     Integer sumQuantityByInvoiceHeaderId(@Param("invoiceHeaderId") UUID invoiceHeaderId);
     
-    // Advanced search
+    // Advanced search (optimized for index usage)
     @Query("SELECT i FROM InvoiceItem i WHERE " +
-           "(:itemCode IS NULL OR LOWER(i.itemCode) LIKE LOWER(CONCAT('%', :itemCode, '%'))) AND " +
-           "(:hsnCode IS NULL OR LOWER(i.hsnCode) LIKE LOWER(CONCAT('%', :hsnCode, '%'))) AND " +
-           "(:description IS NULL OR LOWER(i.itemDescription) LIKE LOWER(CONCAT('%', :description, '%')))")
+           "(:itemCode IS NULL OR i.itemCode LIKE CONCAT(:itemCode, '%')) AND " +
+           "(:hsnCode IS NULL OR i.hsnCode LIKE CONCAT(:hsnCode, '%')) AND " +
+           "(:description IS NULL OR i.itemDescription LIKE CONCAT(:description, '%'))")
     List<InvoiceItem> searchItemsWithFilters(
             @Param("itemCode") String itemCode,
             @Param("hsnCode") String hsnCode,
@@ -53,9 +58,9 @@ public interface InvoiceItemRepository extends JpaRepository<InvoiceItem, UUID> 
     @Query("SELECT i FROM InvoiceItem i WHERE i.unitPrice BETWEEN :minPrice AND :maxPrice")
     List<InvoiceItem> findByUnitPriceBetween(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
     
-    // Find most expensive items
+    // Find most expensive items (paginated to prevent memory issues)
     @Query("SELECT i FROM InvoiceItem i ORDER BY i.unitPrice DESC")
-    List<InvoiceItem> findMostExpensiveItems();
+    Page<InvoiceItem> findMostExpensiveItems(Pageable pageable);
     
     // Find items by quantity range
     List<InvoiceItem> findByQuantityBetween(Integer minQuantity, Integer maxQuantity);

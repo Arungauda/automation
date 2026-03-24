@@ -15,6 +15,8 @@ public interface InvoiceHeaderService {
 
     List<InvoiceHeader> getAllInvoiceHeaders();
 
+    List<InvoiceHeader> getAllInvoicesWithItems();
+
     InvoiceHeader getInvoiceHeaderById(UUID id);
 
     void deleteInvoiceHeader(UUID id);
@@ -49,6 +51,8 @@ public interface InvoiceHeaderService {
     Optional<InvoicePDF> getInvoicePdf(UUID invoiceId);
 
     void removeInvoicePdf(UUID invoiceId);
+
+    List<Object[]> findTopCustomersByInvoiceCountData(int limit);
 
     // Validation operations
     boolean validateInvoiceNumber(String invoiceNumber);

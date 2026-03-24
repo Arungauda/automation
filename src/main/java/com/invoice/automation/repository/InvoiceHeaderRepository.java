@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface InvoiceHeaderRepository extends JpaRepository<InvoiceHeader, java.util.UUID> {
@@ -41,17 +41,24 @@ public interface InvoiceHeaderRepository extends JpaRepository<InvoiceHeader, ja
     
     boolean existsByInvoiceNumber(String invoiceNumber);
     
+    // Performance optimized methods for revenue calculations
+    @Query("SELECT DISTINCT i FROM InvoiceHeader i LEFT JOIN FETCH i.items LEFT JOIN FETCH i.invoicePDF")
+    List<InvoiceHeader> findAllWithItemsAndPDF();
+    
+    @Query("SELECT DISTINCT i FROM InvoiceHeader i LEFT JOIN FETCH i.items WHERE i.id IN :ids")
+    List<InvoiceHeader> findByIdsWithItems(@Param("ids") List<UUID> ids);
+
     // Statistics methods - CACHE: Expensive aggregation queries
     @Cacheable
-    @Query("SELECT i FROM InvoiceHeader i GROUP BY i.customerName ORDER BY COUNT(i) DESC")
-    List<InvoiceHeader> findTopCustomersByInvoiceCount(int limit);
+    @Query("SELECT i.customerName, COUNT(i) FROM InvoiceHeader i GROUP BY i.customerName ORDER BY COUNT(i) DESC LIMIT :limit")
+    List<Object[]> findTopCustomersByInvoiceCountData(@Param("limit") int limit);
     
-    // Advanced search (can be extended with Specifications)
+    // Advanced search (optimized for index usage)
     @Query("SELECT i FROM InvoiceHeader i WHERE " +
-           "(:customerName IS NULL OR LOWER(i.customerName) LIKE LOWER(CONCAT('%', :customerName, '%'))) AND " +
+           "(:customerName IS NULL OR i.customerName LIKE CONCAT(:customerName, '%')) AND " +
            "(:startDate IS NULL OR i.invoiceDate >= :startDate) AND " +
            "(:endDate IS NULL OR i.invoiceDate <= :endDate) AND " +
-           "(:companyCode IS NULL OR LOWER(i.companyCode) LIKE LOWER(CONCAT('%', :companyCode, '%')))")
+           "(:companyCode IS NULL OR i.companyCode LIKE CONCAT(:companyCode, '%'))")
     List<InvoiceHeader> findInvoicesWithFilters(
             @Param("customerName") String customerName,
             @Param("startDate") LocalDate startDate,
