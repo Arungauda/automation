@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: invoice-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: NewPassword123!
+      MYSQL_DATABASE: invoice_automation
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d:ro
+    networks:
+      - dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: invoice-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - dev-network
+    command: redis-server --appendonly yes
+
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: invoice-app-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/invoice_automation?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: dev_user
+      SPRING_DATASOURCE_PASSWORD: dev_pass
+      
+      # Redis Configuration
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      
+      # Development Configuration
+      SPRING_PROFILES_ACTIVE: dev
+      LOGGING_LEVEL_COM_INVOICE_AUTOMATION: DEBUG
+      
+      # JVM Options
+      JAVA_OPTS: "-Xmx256m -Xms128m -XX:+UseG1GC"
+    volumes:
+      - app_dev_cache:/app/cache
+      - ./src/main/resources:/app/src/main/resources
+    networks:
+      - dev-network
+    depends_on:
+      - mysql
+      - redis
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  app_dev_cache:
+    driver: local
+
+networks:
+  dev-network:
+    driver: bridge

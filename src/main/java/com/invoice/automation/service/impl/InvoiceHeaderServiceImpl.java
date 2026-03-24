@@ -12,6 +12,11 @@ import com.invoice.automation.service.InvoiceHeaderService;
 import com.invoice.automation.service.InvoiceNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +40,8 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
 
     // Basic CRUD operations
     @Override
+    @CachePut(value = "invoiceHeader", key = "#result.id")
+    @CacheEvict(value = {"customerStats", "queryCache"}, allEntries = true)
     public InvoiceHeader saveInvoiceHeader(InvoiceHeader invoiceHeader) {
         log.info("Saving invoice header for customer: {}", invoiceHeader.getCustomerName());
         return invoiceHeaderRepository.save(invoiceHeader);
@@ -42,6 +49,7 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "invoiceHeader", key = "'all'")
     public List<InvoiceHeader> getAllInvoiceHeaders() {
         log.info("Fetching all invoice headers");
         return invoiceHeaderRepository.findAll();
@@ -49,6 +57,7 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "invoiceHeader", key = "'allWithItems'")
     public List<InvoiceHeader> getAllInvoicesWithItems() {
         log.info("Fetching all invoices with items (optimized for N+1 prevention)");
         return invoiceHeaderRepository.findAllWithItemsAndPDF();
@@ -56,6 +65,7 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "invoiceHeader", key = "#id")
     public InvoiceHeader getInvoiceHeaderById(UUID id) {
         log.info("Fetching invoice header by id: {}", id);
         return invoiceHeaderRepository.findById(id)
@@ -63,6 +73,7 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
     }
 
     @Override
+    @CacheEvict(value = {"invoiceHeader", "customerStats", "queryCache"}, allEntries = true)
     public void deleteInvoiceHeader(UUID id) {
         log.info("Deleting invoice header with id: {}", id);
         if (!invoiceHeaderRepository.existsById(id)) {
@@ -72,6 +83,8 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
     }
 
     @Override
+    @CachePut(value = "invoiceHeader", key = "#id")
+    @CacheEvict(value = {"customerStats", "queryCache"}, allEntries = true)
     public InvoiceHeader updateInvoiceHeader(UUID id, InvoiceHeader invoiceHeader) {
         log.info("Updating invoice header with id: {}", id);
         InvoiceHeader existingInvoice = getInvoiceHeaderById(id);
@@ -290,14 +303,66 @@ public class InvoiceHeaderServiceImpl implements InvoiceHeaderService {
 
     // Bulk operations
     @Override
+    @CacheEvict(value = {"invoiceHeader", "customerStats", "queryCache"}, allEntries = true)
     public List<InvoiceHeader> saveMultipleInvoices(List<InvoiceHeader> invoiceHeaders) {
         log.info("Saving {} invoices", invoiceHeaders.size());
         return invoiceHeaderRepository.saveAll(invoiceHeaders);
     }
 
     @Override
+    @CacheEvict(value = {"invoiceHeader", "customerStats", "queryCache"}, allEntries = true)
     public void deleteMultipleInvoices(List<UUID> invoiceIds) {
         log.info("Deleting {} invoices", invoiceIds.size());
         invoiceIds.forEach(this::deleteInvoiceHeader);
+    }
+
+    // Cache Management Methods
+    
+    /**
+     * Warms up the cache with frequently accessed data
+     * Called automatically on application startup
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "invoiceHeader", key = "'all'")
+    public void warmCache() {
+        log.info("Warming up invoice header cache...");
+        try {
+            // Pre-load frequently accessed data
+            invoiceHeaderRepository.findAll();
+            log.info("Cache warming completed successfully");
+        } catch (Exception e) {
+            log.error("Error during cache warming", e);
+        }
+    }
+
+    /**
+     * Refreshes customer statistics cache periodically
+     * Scheduled to run every 10 minutes
+     */
+    @Scheduled(fixedRate = 600000) // 10 minutes
+    @CacheEvict(value = "customerStats", allEntries = true)
+    public void refreshCustomerStatsCache() {
+        log.info("Refreshing customer statistics cache");
+        // Cache will be rebuilt on next access
+    }
+
+    /**
+     * Refreshes query cache periodically
+     * Scheduled to run every 15 minutes
+     */
+    @Scheduled(fixedRate = 900000) // 15 minutes
+    @CacheEvict(value = "queryCache", allEntries = true)
+    public void refreshQueryCache() {
+        log.info("Refreshing query cache");
+        // Cache will be rebuilt on next access
+    }
+
+    /**
+     * Clears all application caches
+     * Use this for emergency cache invalidation
+     */
+    @CacheEvict(value = {"invoiceHeader", "customerStats", "queryCache"}, allEntries = true)
+    public void clearAllCaches() {
+        log.info("Clearing all application caches");
     }
 }
